@@ -11,3 +11,7 @@ Currently running on windows, but is platform independent
 ### Install bokeh
 ```pip install --upgrade bokeh```
 
+## TODO
+Add to a container?
+Create flask app to push to aws
+Run from wordpress? (need python tools, idk)
