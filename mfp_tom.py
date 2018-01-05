@@ -15,7 +15,9 @@ from bokeh.core.properties import value
 macros = ['carbs', 'protein', 'fat']
 colors = ['#c9d9d3', '#718dbf', '#e84d60']
 # fill data with what you want to see
-data = { 'days' : [], 'carbs' : [], 'protein': [], 'fat': [] }
+data = { 'days' : [],
+		 'macros': {'carbs' : [], 'protein': [], 'fat': [] }
+		}
 
 def make_chart(client, numDays):
 
@@ -36,9 +38,9 @@ def make_chart(client, numDays):
 		# just check the calories to make sure information is present
 		data['days'].append(day)
 		if 'calories' in info[day].totals:
-			data['carbs'].append(info[day].totals['carbohydrates'])
-			data['protein'].append(info[day].totals['protein'])
-			data['fat'].append(info[day].totals['fat'])
+			data['macros']['carbs'].append(info[day].totals['carbohydrates'])
+			data['macros']['protein'].append(info[day].totals['protein'])
+			data['macros']['fat'].append(info[day].totals['fat'])
 		else:
 			# error case handling to keep the x and y sizes equal
 			data['carbs'].append(math.nan)
@@ -63,13 +65,19 @@ def make_chart(client, numDays):
 	p.min_border_left = 80
 	p.min_border_top = 40
 	p.min_border_bottom = 80
-	p.multi_line([data['days'], data['days'], data['days']], [data['carbs'], data['protein'], data['fat']], 
-		line_color=colors, line_width=4)
+	# just add all the lines, no multi line bull
+	for macro, color in zip(data['macros'], colors):
+		p.line(data['days'], data['macros'][macro], line_width=4, color=color, alpha=0.8, legend=macro)
+
+	#p.multi_line([data['days'], data['days'], data['days']], [data['carbs'], data['protein'], data['fat']], 
+	#	line_color=colors, line_width=4)
 	carbGoal = Span(location=goals['carbohydrates'], dimension='width', line_color=colors[0], line_dash='dashed', line_width=3)
 	proteinGoal = Span(location=goals['protein'], dimension='width', line_color=colors[1], line_dash='dashed', line_width=3)
 	fatGoal = Span(location=goals['fat'], dimension='width', line_color=colors[2], line_dash='dashed', line_width=3)
 	p.add_layout(carbGoal)
 	p.add_layout(proteinGoal)
 	p.add_layout(fatGoal)
+	p.legend.location = "top_left"
+	p.legend.click_policy = "hide"
 	output_file("calories.html")
 	save(p)
