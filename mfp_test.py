@@ -1,4 +1,5 @@
 # using python 3.5.x
+import math
 import time
 from datetime import date
 from datetime import timedelta
@@ -7,7 +8,7 @@ import myfitnesspal
 # pip install bokeh for all these
 from bokeh.plotting import figure 
 from bokeh.io import output_file, show
-from bokeh.models import ColumnDataSource
+from bokeh.models import ColumnDataSource, Span
 from bokeh.core.properties import value
 
 
@@ -30,6 +31,7 @@ x.reverse()
 # info placeholder getting the mfp data
 info = {}
 today = date.today()
+goals = client.get_date(today).goals
 calorieList = {}
 for day in x:
 	# it really is this easy
@@ -39,16 +41,16 @@ for day in x:
 	info[day] = client.get_date(dayToEval.year, dayToEval.month, dayToEval.day)
 	print(info[day])
 	# just check the calories to make sure information is present
+	data['days'].append(day)
 	if 'calories' in info[day].totals:
-		data['days'].append(day)
 		data['carbs'].append(info[day].totals['carbohydrates'])
 		data['protein'].append(info[day].totals['protein'])
 		data['fat'].append(info[day].totals['fat'])
 	else:
 		# error case handling to keep the x and y sizes equal
-		data['carbs'].append(0)
-		data['protein'].append(0)
-		data['fat'].append(0)
+		data['carbs'].append(math.nan)
+		data['protein'].append(math.nan)
+		data['fat'].append(math.nan)
 
 	# look for calories per item
 	for meal in info[day].meals:
@@ -62,10 +64,17 @@ for i in range(1, 15):
 
 # set up the bokeh plot, stacked bar graph for now
 #source = ColumnDataSource(data=data)
-p = figure(title='Macros Per Day', toolbar_location=None, tools="")
+p = figure(title='Macros Per Day')
 #p.vbar_stack(macros, x='days', width=0.9, color=colors, source=source,legend=[value(m) for m in macros])
 #p.xgrid.grid_line_color=None
 p.multi_line([data['days'], data['days'], data['days']], [data['carbs'], data['protein'], data['fat']], 
 	line_color=colors, line_width=4)
+# create three lines with the goals
+carbGoal = Span(location=goals['carbohydrates'], dimension='width', line_color=colors[0], line_dash='dashed', line_width=3)
+proteinGoal = Span(location=goals['protein'], dimension='width', line_color=colors[1], line_dash='dashed', line_width=3)
+fatGoal = Span(location=goals['fat'], dimension='width', line_color=colors[2], line_dash='dashed', line_width=3)
+p.add_layout(carbGoal)
+p.add_layout(proteinGoal)
+p.add_layout(fatGoal)
 output_file("calories.html")
 show(p)
